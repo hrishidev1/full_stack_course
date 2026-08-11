@@ -9,6 +9,8 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [search, setSearch] = useState('')
+  const [message, setMessage] = useState(null)
+  const [errorMessage, setErrorMessage] = useState(null)
 
   useEffect(() => {
     personService
@@ -43,8 +45,25 @@ const App = () => {
           setPersons(persons.map(person =>
             person.id === existingPerson.id ? response.data : person
           ))
+
           setNewName('')
           setNewNumber('')
+          setMessage(`${newName}'s number was updated`)
+
+          setTimeout(() => {
+            setMessage(null)
+          }, 5000)
+        })
+        .catch(() => {
+          setErrorMessage(
+            `${newName} was already removed from the phonebook`
+          )
+
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
+
+          setPersons(persons.filter(person => person.id !== existingPerson.id))
         })
 
       return
@@ -61,6 +80,11 @@ const App = () => {
         setPersons(persons.concat(response.data))
         setNewName('')
         setNewNumber('')
+        setMessage(`${newName} was added to the phonebook`)
+
+        setTimeout(() => {
+          setMessage(null)
+        }, 5000)
       })
   }
 
@@ -97,6 +121,28 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+
+      {message && (
+        <div style={{
+          color: 'green',
+          background: 'lightgrey',
+          padding: '10px',
+          marginBottom: '10px'
+        }}>
+          {message}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div style={{
+          color: 'red',
+          background: 'lightgrey',
+          padding: '10px',
+          marginBottom: '10px'
+        }}>
+          {errorMessage}
+        </div>
+      )}
 
       <Filter
         search={search}
