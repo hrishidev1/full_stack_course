@@ -15,8 +15,8 @@ const App = () => {
   useEffect(() => {
     personService
       .getAll()
-      .then(response => {
-        setPersons(response.data)
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
   }, [])
 
@@ -41,9 +41,9 @@ const App = () => {
 
       personService
         .update(existingPerson.id, updatedPerson)
-        .then(response => {
+        .then(returnedPerson => {
           setPersons(persons.map(person =>
-            person.id === existingPerson.id ? response.data : person
+            person.id === existingPerson.id ? returnedPerson : person
           ))
 
           setNewName('')
@@ -76,8 +76,8 @@ const App = () => {
 
     personService
       .create(person)
-      .then(response => {
-        setPersons(persons.concat(response.data))
+      .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
         setMessage(`${newName} was added to the phonebook`)
