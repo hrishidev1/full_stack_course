@@ -15,12 +15,15 @@ const App = () => {
   useEffect(() => {
     personService
       .getAll()
-      .then(initialPersons => {
-        setPersons(initialPersons)
+      .then(persons => {
+        setPersons(persons)
+      })
+      .catch(error => {
+        console.error(error)
       })
   }, [])
 
-  const addPerson = (event) => {
+  const addPerson = event => {
     event.preventDefault()
 
     const existingPerson = persons.find(person => person.name === newName)
@@ -41,10 +44,12 @@ const App = () => {
 
       personService
         .update(existingPerson.id, updatedPerson)
-        .then(returnedPerson => {
-          setPersons(persons.map(person =>
-            person.id === existingPerson.id ? returnedPerson : person
-          ))
+        .then(response => {
+          setPersons(
+            persons.map(person =>
+              person.id === existingPerson.id ? response : person
+            )
+          )
 
           setNewName('')
           setNewNumber('')
@@ -54,16 +59,15 @@ const App = () => {
             setMessage(null)
           }, 5000)
         })
-        .catch(() => {
+        .catch(error => {
           setErrorMessage(
-            `${newName} was already removed from the phonebook`
+            error.response?.data?.error ||
+              `${newName} could not be updated`
           )
 
           setTimeout(() => {
             setErrorMessage(null)
           }, 5000)
-
-          setPersons(persons.filter(person => person.id !== existingPerson.id))
         })
 
       return
@@ -76,8 +80,8 @@ const App = () => {
 
     personService
       .create(person)
-      .then(returnedPerson => {
-        setPersons(persons.concat(returnedPerson))
+      .then(response => {
+        setPersons(persons.concat(response))
         setNewName('')
         setNewNumber('')
         setMessage(`${newName} was added to the phonebook`)
@@ -86,10 +90,23 @@ const App = () => {
           setMessage(null)
         }, 5000)
       })
+      .catch(error => {
+        setErrorMessage(
+          error.response?.data?.error || 'Unable to add person'
+        )
+
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+      })
   }
 
-  const deletePerson = (id) => {
+  const deletePerson = id => {
     const person = persons.find(person => person.id === id)
+
+    if (!person) {
+      return
+    }
 
     if (!window.confirm(`Delete ${person.name}?`)) {
       return
@@ -100,17 +117,26 @@ const App = () => {
       .then(() => {
         setPersons(persons.filter(person => person.id !== id))
       })
+      .catch(error => {
+        setErrorMessage(
+          error.response?.data?.error || 'Unable to delete person'
+        )
+
+        setTimeout(() => {
+          setErrorMessage(null)
+        }, 5000)
+      })
   }
 
-  const handleNameChange = (event) => {
+  const handleNameChange = event => {
     setNewName(event.target.value)
   }
 
-  const handleNumberChange = (event) => {
+  const handleNumberChange = event => {
     setNewNumber(event.target.value)
   }
 
-  const handleSearchChange = (event) => {
+  const handleSearchChange = event => {
     setSearch(event.target.value)
   }
 
@@ -123,23 +149,27 @@ const App = () => {
       <h2>Phonebook</h2>
 
       {message && (
-        <div style={{
-          color: 'green',
-          background: 'lightgrey',
-          padding: '10px',
-          marginBottom: '10px'
-        }}>
+        <div
+          style={{
+            color: 'green',
+            background: 'lightgrey',
+            padding: '10px',
+            marginBottom: '10px'
+          }}
+        >
           {message}
         </div>
       )}
 
       {errorMessage && (
-        <div style={{
-          color: 'red',
-          background: 'lightgrey',
-          padding: '10px',
-          marginBottom: '10px'
-        }}>
+        <div
+          style={{
+            color: 'red',
+            background: 'lightgrey',
+            padding: '10px',
+            marginBottom: '10px'
+          }}
+        >
           {errorMessage}
         </div>
       )}
