@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import blogService from '../services/blogs'
 
 const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
@@ -11,6 +12,7 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
 
   const likeBlog = async () => {
     setLoading(true)
+
     try {
       const updatedBlog = {
         ...blog,
@@ -42,7 +44,9 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
   return (
     <div className="blog">
       <div className="blog-summary">
-        <span className="blog-title">{blog.title}</span>{' '}
+        <Link to={`/blogs/${blog.id}`} className="blog-title">
+          {blog.title}
+        </Link>{' '}
         <span className="blog-author">{blog.author}</span>
 
         <button onClick={toggleDetails}>
@@ -52,18 +56,21 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
 
       {showDetails && (
         <div className="blog-details">
+          <div>{blog.url}</div>
+
           <div className="blog-likes">
             likes {blog.likes}
-            <button
-              className="like-button"
-              onClick={likeBlog}
-              disabled={loading}
-            >
-              like
-            </button>
+
+            {user && (
+              <button
+                className="like-button"
+                onClick={likeBlog}
+                disabled={loading}
+              >
+                like
+              </button>
+            )}
           </div>
-          
-          <div>{blog.url}</div>
 
           <div>{blog.user?.name}</div>
 

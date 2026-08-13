@@ -1,54 +1,61 @@
-import { describe, test, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
+import { expect, test, vi, describe } from 'vitest'
 import Blog from './Blog'
+
 import blogService from '../services/blogs'
 
-vi.mock('../services/blogs', () => ({
-  default: {
-    update: vi.fn()
-  }
-}))
+vi.mock('../services/blogs')
 
-describe('<Blog />', () => {
-  const blog = {
+const blog = {
+  id: '123',
+  title: 'Testing React components',
+  author: 'John Doe',
+  url: 'https://example.com',
+  likes: 0,
+  user: {
     id: '123',
-    title: 'Testing React components',
-    author: 'John Doe',
-    url: 'https://example.com/testing',
-    likes: 5,
-    user: {
-      id: '123',
-      name: 'John Doe'
-    }
+    name: 'Test User'
   }
+}
 
-  const renderBlog = (updateBlog = () => {}) => {
-    return render(
+const renderBlog = (props = {}) => {
+  return render(
+    <MemoryRouter>
       <Blog
         blog={blog}
-        updateBlog={updateBlog}
-        deleteBlog={() => {}}
+        updateBlog={vi.fn()}
+        deleteBlog={vi.fn()}
         user={blog.user}
+        {...props}
       />
-    )
-  }
+    </MemoryRouter>
+  )
+}
 
+describe('<Blog />', () => {
   test('renders title and author', () => {
     renderBlog()
 
-    screen.getByText('Testing React components John Doe')
+    expect(
+      screen.getByText('Testing React components')
+    ).toBeInTheDocument()
+
+    expect(
+      screen.getByText('John Doe')
+    ).toBeInTheDocument()
   })
 
   test('does not render URL or likes by default', () => {
     renderBlog()
 
     expect(
-      screen.queryByText('https://example.com/testing')
+      screen.queryByText('https://example.com')
     ).not.toBeInTheDocument()
 
     expect(
-      screen.queryByText('likes 5')
+      screen.queryByText(/likes/)
     ).not.toBeInTheDocument()
   })
 
@@ -60,11 +67,11 @@ describe('<Blog />', () => {
     await user.click(screen.getByText('view'))
 
     expect(
-      screen.getByText('https://example.com/testing')
+      screen.getByText('https://example.com')
     ).toBeInTheDocument()
 
     expect(
-      screen.getByText('likes 5')
+      screen.getByText('likes 0')
     ).toBeInTheDocument()
   })
 
@@ -72,9 +79,17 @@ describe('<Blog />', () => {
     const user = userEvent.setup()
     const updateBlog = vi.fn()
 
-    blogService.update.mockResolvedValue(blog)
+    blogService.update
+      .mockResolvedValueOnce({
+        ...blog,
+        likes: 1
+      })
+      .mockResolvedValueOnce({
+        ...blog,
+        likes: 2
+      })
 
-    renderBlog(updateBlog)
+    renderBlog({ updateBlog })
 
     await user.click(screen.getByText('view'))
 
@@ -83,6 +98,7 @@ describe('<Blog />', () => {
     await user.click(likeButton)
     await user.click(likeButton)
 
+    expect(blogService.update).toHaveBeenCalledTimes(2)
     expect(updateBlog).toHaveBeenCalledTimes(2)
   })
 })
