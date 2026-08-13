@@ -7,6 +7,7 @@ import {
   Navigate,
   useNavigate
 } from 'react-router-dom'
+import styled from 'styled-components'
 
 import Blog from './components/Blog'
 import BlogForm from './components/BlogForm'
@@ -15,6 +16,65 @@ import SingleBlog from './components/SingleBlog'
 import blogService from './services/blogs'
 import loginService from './services/login'
 
+const FormContainer = styled.div`
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 32px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+`
+
+const FormField = styled.div`
+  margin-bottom: 16px;
+`
+
+const FormLabel = styled.label`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+`
+
+const FormInput = styled.input`
+  padding: 10px 12px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  font-size: 1rem;
+
+  &:focus {
+    outline: 2px solid #646cff;
+    outline-offset: 1px;
+  }
+`
+
+const SubmitButton = styled.button`
+  padding: 10px 18px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+`
+
+const Navigation = styled.nav`
+  background: #2f3b52;
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+`
+
+const NavigationLink = styled(Link)`
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`
 
 const Login = ({
   username,
@@ -25,7 +85,7 @@ const Login = ({
   notification
 }) => {
   return (
-    <div>
+    <FormContainer>
       <h2>Log in to application</h2>
 
       {notification && (
@@ -36,34 +96,35 @@ const Login = ({
       )}
 
       <form onSubmit={handleLogin}>
-        <div>
-          <label>
+        <FormField>
+          <FormLabel>
             username
-            <input
+            <FormInput
               type="text"
               value={username}
               onChange={({ target }) => setUsername(target.value)}
             />
-          </label>
-        </div>
+          </FormLabel>
+        </FormField>
 
-        <div>
-          <label>
+        <FormField>
+          <FormLabel>
             password
-            <input
+            <FormInput
               type="password"
               value={password}
               onChange={({ target }) => setPassword(target.value)}
             />
-          </label>
-        </div>
+          </FormLabel>
+        </FormField>
 
-        <button type="submit">login</button>
+        <SubmitButton type="submit">
+          login
+        </SubmitButton>
       </form>
-    </div>
+    </FormContainer>
   )
 }
-
 
 const BlogList = ({
   blogs,
@@ -101,7 +162,6 @@ const BlogList = ({
   )
 }
 
-
 const CreateBlog = ({ createBlog }) => {
   const navigate = useNavigate()
 
@@ -122,31 +182,6 @@ const CreateBlog = ({ createBlog }) => {
     </div>
   )
 }
-
-
-const SingleBlogRoute = ({
-  blogs,
-  updateBlog,
-  deleteBlog,
-  user
-}) => {
-  const navigate = useNavigate()
-
-  const handleDelete = async blog => {
-    await deleteBlog(blog)
-    navigate('/')
-  }
-
-  return (
-    <SingleBlog
-      blogs={blogs}
-      updateBlog={updateBlog}
-      deleteBlog={handleDelete}
-      user={user}
-    />
-  )
-}
-
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -221,9 +256,7 @@ const App = () => {
     try {
       const returnedBlog = await blogService.create(blogObject)
 
-      setBlogs(currentBlogs =>
-        currentBlogs.concat(returnedBlog)
-      )
+      setBlogs(blogs.concat(returnedBlog))
 
       showNotification(
         `a new blog ${returnedBlog.title} by ${returnedBlog.author} added`,
@@ -232,18 +265,14 @@ const App = () => {
 
       return returnedBlog
     } catch {
-      showNotification(
-        'failed to add blog',
-        'error'
-      )
-
+      showNotification('failed to add blog', 'error')
       throw new Error('failed to add blog')
     }
   }
 
   const updateBlog = updatedBlog => {
-    setBlogs(currentBlogs =>
-      currentBlogs.map(blog =>
+    setBlogs(
+      blogs.map(blog =>
         blog.id === updatedBlog.id
           ? updatedBlog
           : blog
@@ -255,14 +284,16 @@ const App = () => {
     try {
       await blogService.remove(blog.id)
 
-      setBlogs(currentBlogs =>
-        currentBlogs.filter(item => item.id !== blog.id)
+      setBlogs(
+        blogs.filter(item => item.id !== blog.id)
       )
 
       showNotification(
         `blog '${blog.title}' removed`,
         'success'
       )
+
+      return true
     } catch {
       showNotification(
         'failed to remove blog',
@@ -283,21 +314,23 @@ const App = () => {
   return (
     <Router>
       <div>
-        <nav>
-          <Link to="/">blogs</Link>{' '}
+        <Navigation>
+          <NavigationLink to="/">
+            blogs
+          </NavigationLink>
 
           {user && (
-            <Link to="/create">
+            <NavigationLink to="/create">
               create new blog
-            </Link>
+            </NavigationLink>
           )}
 
           {!user && (
-            <Link to="/login">
+            <NavigationLink to="/login">
               login
-            </Link>
+            </NavigationLink>
           )}
-        </nav>
+        </Navigation>
 
         <Routes>
           <Route
@@ -321,7 +354,7 @@ const App = () => {
             path="/blogs/:id"
             element={
               user ? (
-                <SingleBlogRoute
+                <SingleBlog
                   blogs={blogs}
                   updateBlog={updateBlog}
                   deleteBlog={deleteBlog}

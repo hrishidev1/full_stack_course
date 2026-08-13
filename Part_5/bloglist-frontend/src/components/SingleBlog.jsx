@@ -1,6 +1,83 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import styled from 'styled-components'
 import blogService from '../services/blogs'
+
+const BlogContainer = styled.article`
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 32px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+`
+
+const BlogTitle = styled.h2`
+  margin: 0 0 8px;
+  font-size: 2rem;
+`
+
+const BlogAuthor = styled.p`
+  margin: 0 0 24px;
+  color: #666;
+  font-size: 1.05rem;
+`
+
+const BlogUrl = styled.a`
+  display: inline-block;
+  margin-bottom: 24px;
+  color: #646cff;
+  word-break: break-word;
+`
+
+const BlogMeta = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+`
+
+const Likes = styled.span`
+  font-weight: 600;
+`
+
+const ActionButton = styled.button`
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`
+
+const DeleteButton = styled(ActionButton)`
+  background: #dc3545;
+  color: white;
+`
+
+const LikeButton = styled(ActionButton)`
+  background: #646cff;
+  color: white;
+`
+
+const Creator = styled.p`
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+  color: #666;
+`
+
+const NotFound = styled.div`
+  max-width: 720px;
+  margin: 40px auto;
+  padding: 24px;
+  text-align: center;
+`
 
 const SingleBlog = ({ blogs, updateBlog, deleteBlog, user }) => {
   const { id } = useParams()
@@ -9,7 +86,7 @@ const SingleBlog = ({ blogs, updateBlog, deleteBlog, user }) => {
   const blog = blogs.find(blog => blog.id === id)
 
   if (!blog) {
-    return <div>blog not found</div>
+    return <NotFound>blog not found</NotFound>
   }
 
   const likeBlog = async () => {
@@ -44,37 +121,49 @@ const SingleBlog = ({ blogs, updateBlog, deleteBlog, user }) => {
       blog.user._id === user.id)
 
   return (
-    <div className="single-blog">
-      <h2>{blog.title}</h2>
+    <BlogContainer>
+      <BlogTitle>{blog.title}</BlogTitle>
 
-      <div>{blog.author}</div>
+      <BlogAuthor>
+        <span>by </span>
+        <span>{blog.author}</span>
+      </BlogAuthor>
 
-      <div>
-        <a href={blog.url}>{blog.url}</a>
-      </div>
+      <BlogUrl
+        href={blog.url}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {blog.url}
+      </BlogUrl>
 
-      <div>
-        likes {blog.likes}
+      <BlogMeta>
+        <Likes>likes {blog.likes}</Likes>
 
         {user && (
-          <button
+          <LikeButton
             className="like-button"
             onClick={likeBlog}
             disabled={loading}
           >
             like
-          </button>
+          </LikeButton>
         )}
-      </div>
+      </BlogMeta>
 
-      <div>{blog.user?.name}</div>
+      <Creator>
+        <span>added by </span>
+        <span>{blog.user?.name}</span>
+      </Creator>
 
       {userIsCreator && (
-        <button onClick={() => deleteBlog(blog)}>
+        <DeleteButton
+          onClick={() => deleteBlog(blog)}
+        >
           remove
-        </button>
+        </DeleteButton>
       )}
-    </div>
+    </BlogContainer>
   )
 }
 
