@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import Blog from './components/Blog'
+import BlogForm from './components/BlogForm'
 import blogService from './services/blogs'
 import loginService from './services/login'
+import Notification from './components/Notification'
 
 const App = () => {
   const [blogs, setBlogs] = useState([])
@@ -9,11 +11,8 @@ const App = () => {
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
 
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newUrl, setNewUrl] = useState('')
-
   const [notification, setNotification] = useState(null)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
   useEffect(() => {
     blogService.getAll().then(blogs => {
@@ -73,23 +72,12 @@ const App = () => {
     setUser(null)
   }
 
-  const addBlog = async event => {
-    event.preventDefault()
-
-    const blogObject = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl
-    }
-
+  const addBlog = async blogObject => {
     try {
       const returnedBlog = await blogService.create(blogObject)
 
       setBlogs(blogs.concat(returnedBlog))
-
-      setNewTitle('')
-      setNewAuthor('')
-      setNewUrl('')
+      setShowCreateForm(false)
 
       showNotification(
         `a new blog ${returnedBlog.title} by ${returnedBlog.author} added`,
@@ -100,16 +88,50 @@ const App = () => {
     }
   }
 
+  const updateBlog = updatedBlog => {
+    setBlogs(
+      blogs.map(blog =>
+        blog.id === updatedBlog.id ? updatedBlog : blog
+      )
+    )
+  }
+
+  const deleteBlog = async blog => {
+    const confirmed = window.confirm(
+      `Remove blog "${blog.title}" by ${blog.author}?`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    try {
+      await blogService.remove(blog.id)
+
+      setBlogs(blogs.filter(blogItem => blogItem.id !== blog.id))
+
+      showNotification(
+        `blog "${blog.title}" deleted`,
+        'success'
+      )
+    } catch {
+      showNotification(
+        `failed to delete blog "${blog.title}"`,
+        'error'
+      )
+    }
+  }
+
+  const sortedBlogs = [...blogs].sort(
+    (a, b) => b.likes - a.likes
+  )
+
   if (user === null) {
     return (
       <div>
         <h2>Log in to application</h2>
 
-        {notification && (
-          <div>
-            {notification.message}
-          </div>
-        )}
+        <Notification message={notification?.message} />
 
         <form onSubmit={handleLogin}>
           <div>
@@ -144,59 +166,37 @@ const App = () => {
     <div>
       <h2>blogs</h2>
 
-      {notification && (
-        <div>
-          {notification.message}
-        </div>
-      )}
+      <Notification message={notification?.message} />
 
       <p>
         {user.name} logged in
         <button onClick={handleLogout}>logout</button>
       </p>
 
-      <h3>create new</h3>
-
-      <form onSubmit={addBlog}>
-        <div>
-          <label>
-            title
-            <input
-              type="text"
-              value={newTitle}
-              onChange={({ target }) => setNewTitle(target.value)}
-            />
-          </label>
-        </div>
-
-        <div>
-          <label>
-            author
-            <input
-              type="text"
-              value={newAuthor}
-              onChange={({ target }) => setNewAuthor(target.value)}
-            />
-          </label>
-        </div>
-
-        <div>
-          <label>
-            url
-            <input
-              type="text"
-              value={newUrl}
-              onChange={({ target }) => setNewUrl(target.value)}
-            />
-          </label>
-        </div>
-
-        <button type="submit">create</button>
-      </form>
-
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
+      {!showCreateForm && (
+        <button onClick={() => setShowCreateForm(true)}>
+          create new blog
+        </button>
       )}
+
+      {showCreateForm && (
+        <div>
+          <BlogForm createBlog={addBlog} />
+
+          <button onClick={() => setShowCreateForm(false)}>
+            cancel
+          </button>
+        </div>
+      )}
+      {sortedBlogs.map(blog => (
+        <Blog
+          key={blog.id}
+          blog={blog}
+          updateBlog={updateBlog}
+          deleteBlog={deleteBlog}
+          user={user}
+        />
+      ))}
     </div>
   )
 }
