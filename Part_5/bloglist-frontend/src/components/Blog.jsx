@@ -3,43 +3,47 @@ import blogService from '../services/blogs'
 
 const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
   const [showDetails, setShowDetails] = useState(false)
-  const [currentBlog, setCurrentBlog] = useState(blog)
+  const [loading, setLoading] = useState(false)
 
   const toggleDetails = () => {
     setShowDetails(!showDetails)
   }
 
   const likeBlog = async () => {
-    const updatedBlog = {
-      ...currentBlog,
-      likes: currentBlog.likes + 1,
-      user: currentBlog.user?.id || currentBlog.user?._id
+    setLoading(true)
+    try {
+      const updatedBlog = {
+        ...blog,
+        likes: blog.likes + 1
+      }
+
+      const returnedBlog = await blogService.update(
+        blog.id,
+        updatedBlog
+      )
+
+      const blogWithUser = {
+        ...returnedBlog,
+        user: blog.user
+      }
+
+      updateBlog(blogWithUser)
+    } finally {
+      setLoading(false)
     }
-
-    const returnedBlog = await blogService.update(
-      currentBlog.id,
-      updatedBlog
-    )
-
-    const blogWithUser = {
-      ...returnedBlog,
-      user: currentBlog.user
-    }
-
-    setCurrentBlog(blogWithUser)
-    updateBlog(blogWithUser)
   }
 
   const userIsCreator =
-    currentBlog.user &&
+    blog.user &&
     user &&
-    (currentBlog.user.id === user.id ||
-      currentBlog.user._id === user.id)
+    (blog.user.id === user.id ||
+      blog.user._id === user.id)
 
   return (
-    <div>
-      <div>
-        {currentBlog.title} {currentBlog.author}
+    <div className="blog">
+      <div className="blog-summary">
+        <span className="blog-title">{blog.title}</span>{' '}
+        <span className="blog-author">{blog.author}</span>
 
         <button onClick={toggleDetails}>
           {showDetails ? 'hide' : 'view'}
@@ -47,18 +51,24 @@ const Blog = ({ blog, updateBlog, deleteBlog, user }) => {
       </div>
 
       {showDetails && (
-        <div>
-          <div>{currentBlog.url}</div>
-
-          <div>
-            likes {currentBlog.likes}
-            <button onClick={likeBlog}>like</button>
+        <div className="blog-details">
+          <div className="blog-likes">
+            likes {blog.likes}
+            <button
+              className="like-button"
+              onClick={likeBlog}
+              disabled={loading}
+            >
+              like
+            </button>
           </div>
+          
+          <div>{blog.url}</div>
 
-          <div>{currentBlog.user?.name}</div>
+          <div>{blog.user?.name}</div>
 
           {userIsCreator && (
-            <button onClick={() => deleteBlog(currentBlog)}>
+            <button onClick={() => deleteBlog(blog)}>
               remove
             </button>
           )}
